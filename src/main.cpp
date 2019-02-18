@@ -105,28 +105,6 @@ struct Instruction
  */
 Instruction CODE[MAX_CODE_LENGTH] =
 {
-    // {InstructionType(6), 0, 0, 6},  // 6006
-    // {InstructionType(1), 0, 0, 6},  // 1006
-    // {InstructionType(4), 0, 0, 4},  // 4004
-    // {InstructionType(3), 0, 0, 4},  // 3004
-    // {InstructionType(1), 1, 0, 0},  // 1100
-    // {InstructionType(23), 0, 0, 1}, // 23001
-    // {InstructionType(8), 0, 0, 17}, // 80017
-    // {InstructionType(3), 0, 0, 4},  // 3004
-    // {InstructionType(15), 0, 0, 0}, // 15000
-    // {InstructionType(4), 0, 0, 5},  // 4005
-    // {InstructionType(3), 0, 0, 4},  // 3004
-    // {InstructionType(1), 1, 0, 1},  // 1101
-    // {InstructionType(14), 0, 0, 1}, // 14001
-    // {InstructionType(4), 0, 0, 4},  // 4004
-    // {InstructionType(3), 0, 0, 5},  // 3005
-    // {InstructionType(9), 0, 0, 1},  // 9001
-    // {InstructionType(7), 0, 0, 3},  // 7003
-    // {InstructionType(3), 0, 0, 4},  // 3004
-    // {InstructionType(9), 0, 0, 1},  // 9001
-    // {InstructionType(3), 0, 0, 5},  // 3005
-    // {InstructionType(9), 0, 0, 1},  // 9001
-    // {InstructionType(2), 0, 0, 0}   // 2000
     {InstructionType(7), 0, 0, 10},
     {InstructionType(7), 0, 0, 2},
     {InstructionType(6), 0, 0, 6},
@@ -203,13 +181,6 @@ int main(int argc, char *argv[])
     
     // Printing out initial values
     int i = 0;
-    
-
-//    // Test code to print out lookup table
-//    for (int i = 0; i <= 24; ++i)
-//    {
-//        out << i << "\t" << InstructionTypeLookupTable[i] << "\n";
-//    }
     
     std::stringstream out;
     out << "Line\tOP\t\tR\tL\tM\n";
