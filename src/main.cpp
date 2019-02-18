@@ -1,4 +1,5 @@
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -83,7 +84,10 @@ struct Instruction
     InstructionType mOpCode;
     /** R - Register being referenced */
     int mRegister;
-    /** L - Lexicographical Level */
+    /**
+     * L - Lexicographical Level or a Register
+     * in Arithmetic and Logic Instructions
+     */
     int mLexLevel;
     /**
      * M - Operation Operand. Usage varies based on operational code.
@@ -101,28 +105,45 @@ struct Instruction
  */
 Instruction CODE[MAX_CODE_LENGTH] =
 {
-    {InstructionType(6), 0, 0, 6},  // 6006
-    {InstructionType(1), 0, 0, 6},  // 1006
-    {InstructionType(4), 0, 0, 4},  // 4004
-    {InstructionType(3), 0, 0, 4},  // 3004
-    {InstructionType(1), 1, 0, 0},  // 1100
-    {InstructionType(23), 0, 0, 1}, // 23001
-    {InstructionType(8), 0, 0, 17}, // 80017
-    {InstructionType(3), 0, 0, 4},  // 3004
-    {InstructionType(15), 0, 0, 0}, // 15000
-    {InstructionType(4), 0, 0, 5},  // 4005
-    {InstructionType(3), 0, 0, 4},  // 3004
-    {InstructionType(1), 1, 0, 1},  // 1101
-    {InstructionType(14), 0, 0, 1}, // 14001
-    {InstructionType(4), 0, 0, 4},  // 4004
-    {InstructionType(3), 0, 0, 5},  // 3005
-    {InstructionType(9), 0, 0, 1},  // 9001
-    {InstructionType(7), 0, 0, 3},  // 7003
-    {InstructionType(3), 0, 0, 4},  // 3004
-    {InstructionType(9), 0, 0, 1},  // 9001
-    {InstructionType(3), 0, 0, 5},  // 3005
-    {InstructionType(9), 0, 0, 1},  // 9001
-    {InstructionType(2), 0, 0, 0}   // 2000
+    // {InstructionType(6), 0, 0, 6},  // 6006
+    // {InstructionType(1), 0, 0, 6},  // 1006
+    // {InstructionType(4), 0, 0, 4},  // 4004
+    // {InstructionType(3), 0, 0, 4},  // 3004
+    // {InstructionType(1), 1, 0, 0},  // 1100
+    // {InstructionType(23), 0, 0, 1}, // 23001
+    // {InstructionType(8), 0, 0, 17}, // 80017
+    // {InstructionType(3), 0, 0, 4},  // 3004
+    // {InstructionType(15), 0, 0, 0}, // 15000
+    // {InstructionType(4), 0, 0, 5},  // 4005
+    // {InstructionType(3), 0, 0, 4},  // 3004
+    // {InstructionType(1), 1, 0, 1},  // 1101
+    // {InstructionType(14), 0, 0, 1}, // 14001
+    // {InstructionType(4), 0, 0, 4},  // 4004
+    // {InstructionType(3), 0, 0, 5},  // 3005
+    // {InstructionType(9), 0, 0, 1},  // 9001
+    // {InstructionType(7), 0, 0, 3},  // 7003
+    // {InstructionType(3), 0, 0, 4},  // 3004
+    // {InstructionType(9), 0, 0, 1},  // 9001
+    // {InstructionType(3), 0, 0, 5},  // 3005
+    // {InstructionType(9), 0, 0, 1},  // 9001
+    // {InstructionType(2), 0, 0, 0}   // 2000
+    {InstructionType(7), 0, 0, 10},
+    {InstructionType(7), 0, 0, 2},
+    {InstructionType(6), 0, 0, 6},
+    {InstructionType(1), 0, 0, 13},
+    {InstructionType(4), 0, 0, 4},
+    {InstructionType(1), 0, 0, 1},
+    {InstructionType(4), 0, 1, 4},
+    {InstructionType(1), 0, 0, 7},
+    {InstructionType(4), 0, 0, 5},
+    {InstructionType(2), 0, 0, 0},
+    {InstructionType(6), 0, 0, 6},
+    {InstructionType(1), 0, 0, 3},
+    {InstructionType(4), 0, 0, 4},
+    {InstructionType(1), 0, 0, 9},
+    {InstructionType(4), 0, 0, 5},
+    {InstructionType(5), 0, 0, 2},
+    {InstructionType(11), 0, 0, 3}
 };
 
 /**
@@ -212,9 +233,7 @@ int main(int argc, char *argv[])
     out.clear();
     
     // Continue until halt flag is set
-    // or the BP is 0 so the application doesn't
-    // run forever.
-    while (HALT_FLAG != 1 && BP != 0)
+    while (HALT_FLAG != 1)
     {
         // Fetch Cycle
         // In the Fetch Cycle, an instruction is fetched from the “code” store
@@ -290,6 +309,8 @@ int main(int argc, char *argv[])
                 STACK[SP + 2] = base(IR->mLexLevel, BP);    // Static Link (SL)
                 STACK[SP + 3] = BP;                         // Dynamic Link (DL)
                 STACK[SP + 4] = PC;                         // Return Address (RA)
+                BP = SP + 1;
+                PC = IR->mMOperand;
                 break;
             // 06 – INC   0, 0, M
             // sp <- sp + M;
@@ -399,13 +420,44 @@ int main(int argc, char *argv[])
         }
         
         // Print out state of Registers after execution
-        out << PC << "\t" << BP << "\t" << SP << "\t\t"
-            << STACK[0] << "  "
-            << STACK[1] << "  "
-            << STACK[2] << "  "
-            << STACK[3] << "  "
-            << STACK[4] << "  "
-            << STACK[5] << "  \n";
+        out << PC << "\t" << BP << "\t" << SP << "\t\t";
+        // Getting Dynamic Link to determine how many Lex Levels
+        // into the stack the current Activation Record is.
+        int nextLexLvl = STACK[BP + 1];
+        // Calculating next base pointer from retrieved number
+        // of Lex Levels Down
+        int nextBP = base(nextLexLvl, BP);
+        for (int i = 1; i <= SP; ++i)
+        {
+            if (i == nextBP)
+            {
+                // Calculate next lexicographical level based on current
+                // level and next base pointer based on the current on
+                // the next lexicographical level. We are going up the
+                // stack instead of down.
+                nextBP = base(--nextLexLvl, BP);
+                if (i > 1)
+                {
+                    out << "| ";
+                }
+            }
+            int val = STACK[i];
+            out << val << " ";
+            if (val < 10)
+            {
+                // Adding an extra space for values over 10 to allow for
+                // space for both digits to be printed.
+                out << " ";
+            }
+        }
+        
+        out << "\n" << std::setw(112) << "Register 0-7:  ";
+        for (int i = 0; i < 8; ++i)
+        {
+            out << " " << RF[i] << " ";
+        }
+        
+        out << "\n";
         
         outputFile << out.str();
         out.str("");
@@ -419,8 +471,7 @@ int main(int argc, char *argv[])
 
 int base(int lexLevelsDown, int basePointer)
 {
-    int newBasePointer; // Find L levels down
-    newBasePointer = basePointer;
+    int newBasePointer = basePointer; // Find L levels down
     while (lexLevelsDown > 0)
     {
         newBasePointer = STACK[newBasePointer + 1];
