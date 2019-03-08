@@ -183,21 +183,22 @@ int main(int argc, char *argv[])
     int i = 0;
     
     std::stringstream out;
-    out << "Line\tOP\t\tR\tL\tM\n";
+    out << "Line       OP        R    L    M\n";
     while (CODE[i].mOpCode != 0)
     {
-        out << i << "\t\t"
-            << InstructionTypeLookupTable[CODE[i].mOpCode] << "\t\t"
-            << CODE[i].mRegister << "\t"
-            << CODE[i].mLexLevel << "\t"
+        out << std::setw(11) << std::left << i
+            << std::setw(10) << std::left << InstructionTypeLookupTable[CODE[i].mOpCode]
+            << CODE[i].mRegister << "    "
+            << CODE[i].mLexLevel << "    "
             << CODE[i].mMOperand << "\n";
         ++i;
     }
     
     out << "\n\n"
-        << "InitVal\tOP\t\tR\tL\tM"
-        << "\t\tPC\tBP\tSP\t\t"
-        << "Stack\n";
+        << "InitVal    OP        R    L    M"
+        << "        PC    BP    SP        "
+        << std::setw(50) << std::left << "Stack "
+        << "Registers\n";
     
     outputFile << out.str();
     out.str("");
@@ -218,15 +219,11 @@ int main(int argc, char *argv[])
         IR = &(CODE[PC]);
         
         // Print Initial Values of Instruction
-        out << PC << "\t\t"
-        << InstructionTypeLookupTable[IR->mOpCode] << "\t\t"
-        << IR->mRegister << "\t"
-        << IR->mLexLevel << "\t"
-        << IR->mMOperand << "\t\t";
-        
-        outputFile << out.str();
-        out.str("");
-        out.clear();
+        out << std::setw(11) << std::left << PC
+        << std::setw(10) << std::left << InstructionTypeLookupTable[IR->mOpCode]
+        << std::setw(5) << std::left << IR->mRegister
+        << std::setw(5) << std::left << IR->mLexLevel
+        << std::setw(9) << std::left << IR->mMOperand;
         
         // Grab next instruction
         PC += 1;
@@ -391,7 +388,9 @@ int main(int argc, char *argv[])
         }
         
         // Print out state of Registers after execution
-        out << PC << "\t" << BP << "\t" << SP << "\t\t";
+        out << std::setw(6) << std::left << PC
+            << std::setw(6) << std::left << BP
+            << std::setw(10) << std::left << SP;
         // Getting Dynamic Link to determine how many Lex Levels
         // into the stack the current Activation Record is.
         int nextLexLvl = STACK[BP + 1];
@@ -422,13 +421,23 @@ int main(int argc, char *argv[])
             }
         }
         
-        out << "\n" << std::setw(112) << "Register 0-7:  ";
+        std::stringstream streamFormatter;
+        streamFormatter << std::left << std::setw(112) << out.str();
+        out.str("");
+        out.clear();
+        out << streamFormatter.str();
+        
+        streamFormatter.str("");
+        streamFormatter.clear();
+        
         for (int i = 0; i < 8; ++i)
         {
-            out << " " << RF[i] << " ";
+            streamFormatter << std::setw(3) << std::left << RF[i];
         }
         
-        out << "\n";
+        streamFormatter << "\n";
+        
+        out << std::right << streamFormatter.str();
         
         outputFile << out.str();
         out.str("");

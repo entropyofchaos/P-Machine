@@ -1,3 +1,6 @@
+set (TARGET PMachine)
+PROJECT (TARGET)
+
 set (HEADERS
   )
 
