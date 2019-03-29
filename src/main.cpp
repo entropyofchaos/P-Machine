@@ -56,10 +56,6 @@ int main(int argc, char *argv[])
     {
         std::cout << outputStream.str();
     }
-    else if (runnableCode)
-    {
-        std::cout << "No errors, program is syntactically correct.\n\n\n";
-    }
     
     outputStream.str("");
     outputStream.clear();

@@ -650,6 +650,11 @@ inline bool parseAndGenerage(const std::vector<std::pair<std::string, token_type
         ++i;
     }
 
+    if (syntaxCorrect)
+    {
+        (*localOutputStream) << "\n\nNo errors, program is syntactically correct.\n";
+    }
+
     return syntaxCorrect;
 }
 
