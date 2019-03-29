@@ -1,8 +1,20 @@
+#ifndef VIRTUALMACHINE_H
+#define VIRTUALMACHINE_H
+
+#include "Instruction.h"
+
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <string>
 #include <sstream>
+#include <string>
+
+struct Instruction;
+
+/**
+ * Runs the program give the input array
+ */
+int runProgram(const std::vector<const Instruction>& code, std::stringstream& outputStream);
 
 /**
  * Find new base pointer lex levels down from inputted base pointer.
@@ -19,110 +31,11 @@ const int MAX_CODE_LENGTH = 500;
 /** Max lexicographical levels that can be referenced in instructions. */
 const int MAX_LEXI_LEVELS = 3;
 
-/** Enumeration containing the different OP codes the system can execute */
-enum InstructionType : int
-{
-    LIT = 1, // LIT    R, 0, M    Loads a constant value (literal) M into Register R
-    RTN, // RTN    0, 0, 0    Returns from a subroutine and restore the caller environment
-    LOD, // LOD    R, L, M    Load value into a selected register from the stack location at offset M from L lexicographical levels down
-    STO, // STO    R, L, M    Store value from a selected register in the stack location at offset M from L lexicographical levels down
-    CAL, // CAL    0, L, M    Call procedure at code index M (generates new Activation Record and pc <- M)
-    INC, // INC    0, 0, M    Allocate M locals (increment sp by M). First four are Functional Value, Static Link (SL), Dynamic Link (DL), and Return Address (RA)
-    JMP, // JMP    0, 0, M    Jump to instruction M
-    JPC, // JPC    R, 0, M    Jump to instruction M if R = 0
-    SIO1, // SIO    R, 0, 1   Write a register to the screen
-    SIO2, // SIO    R, 0, 2   Read in input from the user and store it in a register
-    SIO3, // SIO    0, 0, 3   End of program (program stops running)
-    NEG,
-    ADD,
-    SUB,
-    MUL, // 15
-    DIV,
-    ODD,
-    MOD,
-    EQL,
-    NEQ,
-    LSS,
-    LEQ,
-    GTR,
-    GEQ // = 24
-};
-
-const std::string InstructionTypeLookupTable[] =
-{
-    "invalid", // 0
-    "lit", // 1
-    "rtn", // 2
-    "lod", // 3
-    "sto", // 4
-    "cal", // 5
-    "inc", // 6
-    "jmp", // 7
-    "jpc", // 8
-    "sio", // 9
-    "sio", // 10
-    "sio", // 11
-    "neg", // 12
-    "add", // 13
-    "sub", // 14
-    "mul", // 15
-    "div", // 16
-    "odd", // 17
-    "mod", // 18
-    "eql", // 19
-    "neq", // 20
-    "lss", // 21
-    "leq", // 22
-    "gtr", // 23
-    "geq"  // 24
-};
-
-/** Struct representing one instruction to execute. */
-struct Instruction
-{
-    /** OP - Operation Code */
-    InstructionType mOpCode;
-    /** R - Register being referenced */
-    int mRegister;
-    /**
-     * L - Lexicographical Level or a Register
-     * in Arithmetic and Logic Instructions
-     */
-    int mLexLevel;
-    /**
-     * M - Operation Operand. Usage varies based on operational code.
-     * - A number (instructions: LIT, INC).
-     * - A program address (instructions: JMP, JPC, CAL).
-     * - A data address (instructions: LOD, STO)
-     * - A register in arithmetic and logic instructions.
-     */
-    int mMOperand;
-};
-
 /**
  * Code Store. This array will hold the code to be
  * excuted by the Virtual machine.
  */
-Instruction CODE[MAX_CODE_LENGTH] =
-{
-    {InstructionType(7), 0, 0, 10},
-    {InstructionType(7), 0, 0, 2},
-    {InstructionType(6), 0, 0, 6},
-    {InstructionType(1), 0, 0, 13},
-    {InstructionType(4), 0, 0, 4},
-    {InstructionType(1), 0, 0, 1},
-    {InstructionType(4), 0, 1, 4},
-    {InstructionType(1), 0, 0, 7},
-    {InstructionType(4), 0, 0, 5},
-    {InstructionType(2), 0, 0, 0},
-    {InstructionType(6), 0, 0, 6},
-    {InstructionType(1), 0, 0, 3},
-    {InstructionType(4), 0, 0, 4},
-    {InstructionType(1), 0, 0, 9},
-    {InstructionType(4), 0, 0, 5},
-    {InstructionType(5), 0, 0, 2},
-    {InstructionType(11), 0, 0, 3}
-};
+Instruction CODE[MAX_CODE_LENGTH];
 
 /**
  * Working Execution Stack
@@ -173,34 +86,30 @@ int RF[16] = {};
 /** Flag to tell program to halt execution */
 int HALT_FLAG = 0;
 
-
-int main(int argc, char *argv[])
+inline int runProgram(std::stringstream& outputStream)
 {
-    std::ofstream outputFile;
-    outputFile.open ("outputFile.txt");
-    
     // Printing out initial values
-    int i = 0;
-    
+    int i = 0;  
     std::stringstream out;
+    out << "Input ASM code:\n";
     out << "Line       OP        R    L    M\n";
     while (CODE[i].mOpCode != 0)
     {
         out << std::setw(11) << std::left << i
             << std::setw(10) << std::left << InstructionTypeLookupTable[CODE[i].mOpCode]
             << CODE[i].mRegister << "    "
-            << CODE[i].mLexLevel << "    "
+            << CODE[i].mLexLevelOrReg << "    "
             << CODE[i].mMOperand << "\n";
         ++i;
     }
     
     out << "\n\n"
-        << "InitVal    OP        R    L    M"
+        << "InstrNum   OP        R    L    M"
         << "        PC    BP    SP        "
         << std::setw(50) << std::left << "Stack "
         << "Registers\n";
     
-    outputFile << out.str();
+    outputStream << out.str();
     out.str("");
     out.clear();
     
@@ -222,7 +131,7 @@ int main(int argc, char *argv[])
         out << std::setw(11) << std::left << PC
         << std::setw(10) << std::left << InstructionTypeLookupTable[IR->mOpCode]
         << std::setw(5) << std::left << IR->mRegister
-        << std::setw(5) << std::left << IR->mLexLevel
+        << std::setw(5) << std::left << IR->mLexLevelOrReg
         << std::setw(9) << std::left << IR->mMOperand;
         
         // Grab next instruction
@@ -256,27 +165,29 @@ int main(int argc, char *argv[])
                 PC = STACK[SP + 4];
                 break;
             // 03 – LOD R, L, M
-            // R[i] <- stack[ base(L, bp) + M];
+            // R[i] <- stack[base(L, bp) + M];
+            // Copy from stack to a register
             case LOD:
-                RF[IR->mRegister] = STACK[(base(IR->mLexLevel, BP) + IR->mMOperand)];
+                RF[IR->mRegister] = STACK[(base(IR->mLexLevelOrReg, BP) + IR->mMOperand)];
                 break;
             // 04 – STO R, L, M
-            // stack[ base(L, bp) + M] <- R[i];
+            // stack[base(L, bp) + M] <- R[i];
+            // Copy from register to the stack
             case STO:
-                STACK[(base(IR->mLexLevel, BP) + IR->mMOperand)] = RF[IR->mRegister];
+                STACK[(base(IR->mLexLevelOrReg, BP) + IR->mMOperand)] = RF[IR->mRegister];
                 break;
             // 05 - CAL   0, L, M
             // stack[sp + 1]  <- 0;                 // space to return value
-            // stack[sp + 2]  <-  base(L, bp);      // static link (SL)
+            // stack[sp + 2]  <- base(L, bp);       // static link (SL)
             // stack[sp + 3]  <- bp;                // dynamic link (DL)
             // stack[sp + 4]  <- pc;                // return address (RA)
             // bp <- sp + 1;
             // pc <- M;
             case CAL:
-                STACK[SP + 1] = 0;                          // Return value
-                STACK[SP + 2] = base(IR->mLexLevel, BP);    // Static Link (SL)
-                STACK[SP + 3] = BP;                         // Dynamic Link (DL)
-                STACK[SP + 4] = PC;                         // Return Address (RA)
+                STACK[SP + 1] = 0;                              // Return value
+                STACK[SP + 2] = base(IR->mLexLevelOrReg, BP);   // Static Link (SL)
+                STACK[SP + 3] = BP;                             // Dynamic Link (DL)
+                STACK[SP + 4] = PC;                             // Return Address (RA)
                 BP = SP + 1;
                 PC = IR->mMOperand;
                 break;
@@ -320,27 +231,27 @@ int main(int argc, char *argv[])
             // 12 - NEG
             // R[i] <- -R[j]
             case NEG:
-                RF[IR->mRegister] = -RF[IR->mLexLevel];
+                RF[IR->mRegister] = -RF[IR->mLexLevelOrReg];
                 break;
             // 13 - ADD
             // R[i] <- R[j] + R[k]
             case ADD:
-                RF[IR->mRegister] = RF[IR->mLexLevel] + RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] + RF[IR->mMOperand];
                 break;
             // 14 - SUB
             // R[i] <- R[j] - R[k]
             case SUB:
-                RF[IR->mRegister] = RF[IR->mLexLevel] - RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] - RF[IR->mMOperand];
                 break;
             // 15 - MUL
             // R[i] <- R[j] * R[k]
             case MUL:
-                RF[IR->mRegister] = RF[IR->mLexLevel] * RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] * RF[IR->mMOperand];
                 break;
             // 16 - DIV
             // R[i] <- R[j] / R[k]
             case DIV:
-                RF[IR->mRegister] = RF[IR->mLexLevel] / RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] / RF[IR->mMOperand];
                 break;
             // 17 - ODD
             // R[i] <- R[i] mod 2
@@ -351,37 +262,37 @@ int main(int argc, char *argv[])
             // 18 - MOD
             // R[i] <- R[j] mod  R[k]
             case MOD:
-                RF[IR->mRegister] = RF[IR->mLexLevel] % RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] % RF[IR->mMOperand];
                 break;
             // 19 - EQL
             // R[i] <- R[j] = = R[k]
             case EQL:
-                RF[IR->mRegister] = RF[IR->mLexLevel] == RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] == RF[IR->mMOperand];
                 break;
             // 20 - NEQ
             // R[i] <- R[j] != R[k]
             case NEQ:
-                RF[IR->mRegister] = RF[IR->mLexLevel] != RF[IR->mMOperand];
+                RF[IR->mRegister] = RF[IR->mLexLevelOrReg] != RF[IR->mMOperand];
                 break;
             // 21 - LSS
             // R[i] <- R[j] < R[k]
             case LSS:
-                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevel] < RF[IR->mMOperand]);
+                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevelOrReg] < RF[IR->mMOperand]);
                 break;
             // 22 - LEQ
             // R[i] <- R[j] <= R[k]
             case LEQ:
-                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevel] <= RF[IR->mMOperand]);
+                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevelOrReg] <= RF[IR->mMOperand]);
                 break;
             // 23 - GTR
             // R[i] <- R[j] > R[k]
             case GTR:
-                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevel] > RF[IR->mMOperand]);
+                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevelOrReg] > RF[IR->mMOperand]);
                 break;
             // 24 - GEQ
             // R[i] <- R[j] >= R[k]
             case GEQ:
-                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevel] >= RF[IR->mMOperand]);
+                RF[IR->mRegister] = static_cast<int>(RF[IR->mLexLevelOrReg] >= RF[IR->mMOperand]);
                 break;
             default:
                 break;
@@ -439,17 +350,15 @@ int main(int argc, char *argv[])
         
         out << std::right << streamFormatter.str();
         
-        outputFile << out.str();
+        outputStream << out.str();
         out.str("");
         out.clear();
     }
     
-    outputFile.close();
-    
     return 0;
 }
 
-int base(int lexLevelsDown, int basePointer)
+inline int base(int lexLevelsDown, int basePointer)
 {
     int newBasePointer = basePointer; // Find L levels down
     while (lexLevelsDown > 0)
@@ -459,3 +368,5 @@ int base(int lexLevelsDown, int basePointer)
     }
     return newBasePointer;
 }
+
+#endif // VIRTUALMACHINE_H

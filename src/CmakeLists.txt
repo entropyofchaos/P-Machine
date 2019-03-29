@@ -1,0 +1,13 @@
+set (HEADERS
+    Instruction.h
+    LexicalAnalyzer.h
+    ParserAndCodeGenerator.h
+    Tokens.h
+    VirtualMachine.h
+)
+
+set(SOURCES
+    main.cpp
+)
+
+add_executable(compile ${HEADERS} ${SOURCES})
