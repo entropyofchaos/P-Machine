@@ -54,6 +54,7 @@ bool syntaxCorrect = true;
 int lexItr = 0;
 #define GET(TOKEN) token = &lexemeTable[lexItr++];
 
+// Forward declarations
 void program();
 void block();
 void statement();
@@ -107,9 +108,6 @@ inline void program() {
     }
 }
 
-// block ::= const-declaration  var-declaration  statement.
-// const-declaration ::= [ “const” ident "=" number {"," ident "=" number} “;"].
-// var-declaration  ::= [ "var" ident {"," ident} “;"].
 inline void block() {
     if (token->second == token_type::constSym)
     {
@@ -657,38 +655,5 @@ inline bool parseAndGenerage(const std::vector<std::pair<std::string, token_type
 
     return syntaxCorrect;
 }
-
-/****************************************************************************************
-    EBNF of  tiny PL/0:
-
-    program ::= block "." . 
-    block ::= const-declaration  var-declaration  statement.
-    const-declaration ::= [ “const” ident "=" number {"," ident "=" number} “;"].
-    var-declaration  ::= [ "var" ident {"," ident} “;"].
-    statement   ::= [ ident ":=" expression
-                | "begin" statement { ";" statement } "end" 
-                | "if" condition "then" statement 
-                | "while" condition "do" statement
-                | "read" ident 
-                | "write"  ident 
-                | e ] .  
-    condition ::= "odd" expression 
-            | expression  rel-op  expression.  
-    rel-op ::= "="|“<>"|"<"|"<="|">"|">=“.
-    expression ::= [ "+"|"-"] term { ("+"|"-") term}.
-    term ::= factor {("*"|"/") factor}. 
-    factor ::= ident | number | "(" expression ")“.
-    number ::= digit {digit}.
-    ident ::= letter {letter | digit}.
-    digit ;;= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9“.
-    letter ::= "a" | "b" | … | "y" | "z" | "A" | "B" | ... |"Y" | "Z".
-
-    
-    Based on Wirth’s definition for EBNF we have the following rule:
-    [ ] means an optional item.
-    { } means repeat 0 or more times.
-    Terminal symbols are enclosed in quote marks.
-    A period is used to indicate the end of the definition of a syntactic class.
-*****************************************************************************************/
 
 #endif // PARSERANDCODEGENERATOR_H
