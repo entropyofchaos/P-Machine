@@ -103,8 +103,8 @@ inline int runProgram(std::stringstream& outputStream)
         ++i;
     }
     
-    out << "\n\n"
-        << "InstrNum   OP        R    L    M"
+    out << "\n\nVirtual Machine Execution:\n"
+        << "Line #     OP        R    L    M"
         << "        PC    BP    SP        "
         << std::setw(50) << std::left << "Stack "
         << "Registers\n";
@@ -221,6 +221,7 @@ inline int runProgram(std::stringstream& outputStream)
             // 10 - SIO   R, 0, 2
             // read(R[i]);
             case SIO2:
+                std::cout << "Input a value followed by enter: ";
                 std::cin >> RF[IR->mRegister];
                 break;
             // 11 – SIO   R, 0, 3
