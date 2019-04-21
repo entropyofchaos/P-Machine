@@ -270,8 +270,8 @@ inline bool analyzeCode(std::stringstream& inputStream, std::stringstream& outpu
             if (isWord)
             {
                 // Check if found token is a reserved word
-                const auto itr = reservedWords.find(currentToken);
-                if (itr != reservedWords.cend())
+                const auto itr = RESERVED_WORDS.find(currentToken);
+                if (itr != RESERVED_WORDS.cend())
                 {
                     // Add the lexeme and token type to lexeme list
                     lexemeTable.push_back(std::make_pair(currentToken, itr->second));
@@ -290,8 +290,8 @@ inline bool analyzeCode(std::stringstream& inputStream, std::stringstream& outpu
             else // Special Symbol
             {
                 // Check if found token is a special symbol
-                const auto itr = specialSymbols.find(currentToken);
-                if (itr != specialSymbols.cend())
+                const auto itr = SPECIAL_SYMBOLS.find(currentToken);
+                if (itr != SPECIAL_SYMBOLS.cend())
                 {
                     // Add the lexeme and token type to lexeme list
                     lexemeTable.push_back(std::make_pair(currentToken, itr->second));

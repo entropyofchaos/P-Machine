@@ -16,8 +16,20 @@ enum token_type : int
     readSym , elseSym // = 33
 };
 
+/** Set of tokens that can be found to start a statement. */
+const std::unordered_set<token_type> STATEMENT_TOKENS = 
+{
+    token_type::semicolonSym,
+    token_type::beginSym,
+    token_type::callSym,
+    token_type::ifSym,
+    token_type::whileSym,
+    token_type::readSym,
+    token_type::writeSym
+};
+
 /** Hash table of reserved words mapping them to their enum token_type values. */
-const std::unordered_map<std::string, token_type> reservedWords =
+const std::unordered_map<std::string, token_type> RESERVED_WORDS =
 {
     {"null", nulSym},
     {"begin", beginSym},
@@ -37,7 +49,7 @@ const std::unordered_map<std::string, token_type> reservedWords =
 };
 
 /** Hash table of special symbols mapping them to their enum token_type values. */
-const std::unordered_map<std::string, token_type> specialSymbols =
+const std::unordered_map<std::string, token_type> SPECIAL_SYMBOLS =
 {
     {"+", plusSym},
     {"-", minusSym},

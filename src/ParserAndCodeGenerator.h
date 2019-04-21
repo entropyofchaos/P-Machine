@@ -48,11 +48,17 @@ int TP = 1;
 /** Current Stack Address */
 int CSA = 4;
 
+/** Tracks if syntax is correct throughout generation of program. */
 bool syntaxCorrect = true;
 
 /** Lexeme Table Index */
 int lexItr = 0;
-#define GET(TOKEN) token = &lexemeTable[lexItr++];
+
+/** Get next token and place it in TOKEN */
+#define GET(TOKEN) TOKEN = &lexemeTable[lexItr++];
+
+/** Peek at the next token. */
+#define PEEK(TOKEN) TOKEN = &lexemeTable[lexItr];
 
 // Forward declarations
 void program();
@@ -89,6 +95,31 @@ void codegen(InstructionType instType, int reg, int lexLevOrReg, int op);
     ident ::= letter {letter | digit}.
     digit ;;= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9“.
     letter ::= "a" | "b" | … | "y" | "z" | "A" | "B" | ... |"Y" | "Z".
+
+
+    program ::= block "." . 
+    block ::= const-declaration  var-declaration  procedure-declaration statement.	
+    constdeclaration ::= ["const" ident "=" number {"," ident "=" number} ";"].	
+    var-declaration  ::= [ "int "ident {"," ident} “;"].
+    procedure-declaration ::= { "procedure" ident ";" block ";" }
+    statement   ::= [ ident ":=" expression
+                | "call" ident
+                | "begin" statement { ";" statement } "end" 
+                | "if" condition "then" statement ["else" statement]
+                | "while" condition "do" statement
+                | "read" ident
+                | "write" expression
+                | e ] .  
+    condition ::= "odd" expression 
+            | expression  rel-op  expression.  
+    rel-op ::= "="|“!="|"<"|"<="|">"|">=“.
+    expression ::= [ "+"|"-"] term { ("+"|"-") term}.
+    term ::= factor {("*"|"/") factor}. 
+    factor ::= ident | number | "(" expression ")“.
+    number ::= digit {digit}.
+    ident ::= letter {letter | digit}.
+    digit ;;= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9“.
+    letter ::= "a" | "b" | … | "y" | "z" | "A" | "B" | ... | "Y" | "Z".
 
     
     Based on Wirth’s definition for EBNF we have the following rule:
@@ -252,14 +283,14 @@ inline void statement()
             }
             GET(token);
 
-            int reg = RX;
+            int reg1 = RX;
 
             expression();
 
             if (i != 0)
             {
                 // Generate store call
-                codegen(STO, reg, 0, symbol_table[i].adr);
+                codegen(STO, reg1, 0, symbol_table[i].adr);
                 --RX;
             }
 
@@ -280,16 +311,34 @@ inline void statement()
         }
         case token_type::beginSym:
         {
-            do
+            // Get the next token after the begin token 
+            // and handle statement
+            GET(token);
+            statement();
+            
+            // As long as the next symbol is a starting statement token,
+            // keep parsing/generating statement code
+            while (STATEMENT_TOKENS.count(token->second))
             {
-                GET(token);
+                // If the next symbol is a semicolon, get the next token
+                // so we handle the next statement.
+                while (token->second == token_type::semicolonSym)
+                {
+                    GET(token);
+                }
+                // else
+                // {
+                //     // If not a semicolon, don't grab next symbol
+                //     // so that statement can still continue running.
+                //     (*localOutputStream) << "Warning: - Semicolon between statements missing.\n";
+                // }
+
                 statement();
             }
-            while (token->second == token_type::semicolonSym);
 
             if (token->second != token_type::endSym)
             {
-                (*localOutputStream) << "Error: - Incorrect symbol after statement part in block.\n";
+                (*localOutputStream) << "Error: - Incorrect symbol after statement. end, semicolon or } expected.\n";
                 syntaxCorrect = false;
             }
             GET(token);
@@ -297,7 +346,7 @@ inline void statement()
         }
         case token_type::ifSym:
         {
-            int reg = RX;
+            int reg1 = RX;
 
             GET(token);
             condition();
@@ -310,21 +359,74 @@ inline void statement()
             GET(token);
             
             int ctemp = CX;
-            codegen(JPC, reg, 0, 0);
+            codegen(JPC, reg1, 0, 0);
 
             statement();
-            CODE[ctemp].mMOperand = CX;
+
+            if (token->second == token_type::semicolonSym)
+            {
+                auto tokenTemp = token;
+                PEEK(token);
+
+                if (token->second == token_type::elseSym)
+                {
+                    // If the token after the semicolon is an else token, 
+                    // then get the next token so the else code can be 
+                    // processed. 
+                    GET(token)
+                }
+                else
+                {
+                    // If it isn't an else token, revert the token back
+                    // to its previous held value so it can be processed
+                    // as the end of a statment section of code when this
+                    // function returns.
+                    token = tokenTemp;
+                }
+                
+            }
+
+            if (token->second == token_type::elseSym)
+            {
+                // Token after else token
+                GET(token);
+
+                // Create jump that will bring the
+                // stack pointer to the code after the
+                // else statment should the if statement
+                // execute.
+                int ctemp2 = CX;
+                codegen(JMP, reg1, 0, 0);
+                
+                // Update jump that will bring the
+                // stack pointer to the code in the else
+                // condition if the if condition fails
+                CODE[ctemp].mMOperand = CX;
+
+                statement();
+
+                // Update the jump at the end of the if statment.
+                // The stack pointer will need to be moved to the
+                // currently stored stack index which is right after
+                // the else statemnt.
+                CODE[ctemp2].mMOperand = CX;
+            }
+            else 
+            {
+                CODE[ctemp].mMOperand = CX;
+            }
+
             break;
         }
         case token_type::whileSym:
         {
-            int reg = RX;
+            int reg1 = RX;
             int ctemp1 = CX;
             GET(token);
             condition();
             
             int ctemp2 = CX;
-            codegen(JPC, reg, 0, 0);
+            codegen(JPC, reg1, 0, 0);
 
             if (token->second != token_type::doSym)
             {
@@ -369,7 +471,7 @@ inline void statement()
 
             if (i != 0)
             {
-                // Generate store call
+                // Store value in register RX into variable at adr from symbol table
                 codegen(STO, RX, 0, symbol_table[i].adr);
                 --RX;
             }
@@ -400,8 +502,10 @@ inline void statement()
                 }
 
                 ++RX;
+                // Copy value at found address into register at RX
                 codegen(LOD, RX, 0, symbol_table[i].adr);
 
+                // Print value stored register at RX
                 codegen(SIO1, RX, 0, 0);
                 --RX;
 
@@ -417,8 +521,10 @@ inline void statement()
         }
         default:
         {
-            (*localOutputStream) << "Error: - statement expected.\n";
-            syntaxCorrect = false;
+            // Handle an empty statement
+            
+            // (*localOutputStream) << "Error: - statement expected.\n";
+            // syntaxCorrect = false;
         }
     }
 }
@@ -479,6 +585,10 @@ inline void condition()
                 codegen(GEQ, reg1, reg1, reg2);
                 break;
             }
+            default:
+            {
+                (*localOutputStream) << "Error: - relationship operator not handled.\n";
+            }
         }
     }
 }
@@ -524,6 +634,10 @@ inline void expression()
                     codegen(SUB, reg2, reg2, reg1);
                     --RX;
                     break;
+                }
+                default:
+                {
+                    (*localOutputStream) << "Error - term operator not handled.\n";
                 }
             }
         }
